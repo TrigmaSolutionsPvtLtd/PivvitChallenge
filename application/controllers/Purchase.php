@@ -1,4 +1,5 @@
 <?php
+
 defined('BASEPATH') OR exit('No direct script access allowed');
 
 const HTTP_SUCCESS = 200; // for successfull response with data
@@ -8,8 +9,68 @@ const HTTP_UNAUTHORIZE = 401; // for unauthorize access
 const SECURITY_TOKEN = "c464816f86aad7ebff9e98f2e414aa3b"; // we can use random token. for testing i used statically
 
 class Purchase extends CI_Controller {
-    
-    
+
+    public function __construct() {
+        parent::__construct();
+        $this->load->model('Purchase_model');
+        $this->load->helper('form');
+        $this->load->library('form_validation');
+    }
+
+    /*
+     * Add customer form
+     * Params: customer_name, offering, quantity
+     */
+
+    public function index() {
+        echo $this->input->post('customerName');
+        $this->form_validation->set_error_delimiters('', '');
+        $this->form_validation->set_rules('offering', 'Offering', 'required');
+        $this->form_validation->set_rules('customer_name', 'Customer Name', 'trim|required');
+        $this->form_validation->set_rules('quantity', 'Quantity', 'required|integer');
+        
+        if ($this->form_validation->run() == FALSE) {
+            $data['offers'] = $this->Purchase_model->getOffering();
+            $this->load->view('purchase', $data);
+        } else {
+            $data = array(
+                'token' => SECURITY_TOKEN,
+                'offeringID' => (int) $this->input->post('offering'),
+                'customerName' => $this->input->post('customer_name'),
+                'quantity' => $this->input->post('quantity'),
+            );
+            $url = base_url().'Purchase/add_purchase';
+            echo $this->build_request($data, 'POST', $url);
+        }
+    }
+
+    public function get() {
+        $data = array(
+            'token' => SECURITY_TOKEN,
+        );
+        $url = 'http://localhost/PivvitChallenge/Purchase/purchases';
+        echo $this->build_request($data, 'POST', $url);
+        $this->load->view('list');
+    }
+
+    private function build_request($data, $method, $request) {
+        $data_string = json_encode($data);
+        $curl = curl_init($request);
+        curl_setopt($curl, CURLOPT_CUSTOMREQUEST, $method);
+        curl_setopt($curl, CURLOPT_HTTPHEADER, array(
+            'Content-Type: application/json',
+            'Content-Length: ' . strlen($data_string))
+        );
+        curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);  // Make it so the data coming back is put into a string
+        curl_setopt($curl, CURLOPT_POSTFIELDS, $data_string);  // Insert the data
+        // Send the request
+        $result = curl_exec($curl);
+
+        // Free up the resources $curl is using
+        curl_close($curl);
+        return $result;
+    }
+
     /*
      * Define json ecode 
      * for converting php array to json
@@ -38,20 +99,21 @@ class Purchase extends CI_Controller {
         $json['response'] = $response;
         die($this->JSONEncode($json, 0));
     }
-    
+
     /*
      * Define authentication 
      * params: security_token
      * value : c464816f86aad7ebff9e98f2e414aa3b
      */
+
     public function authenticateUser() {
         $security_token = $this->input->post("security_token");
-        if(empty($this->input->post("security_token"))){ 
+        if (empty($this->input->post("security_token"))) {
             $this->send(HTTP_UNAUTHORIZE, 'Required security token');
-        }else if($security_token!=SECURITY_TOKEN){
+        } else if ($security_token != SECURITY_TOKEN) {
             $this->send(HTTP_UNAUTHORIZE, 'Invalid security token');
-        }else{
-            return true; 
+        } else {
+            return true;
         }
     }
 
@@ -75,8 +137,6 @@ class Purchase extends CI_Controller {
         $this->send(HTTP_SUCCESS, $josn);
     }
 
-
-    
     /*
      * add purchase list 
      * params: customerName, offeringID, quantity
@@ -89,7 +149,7 @@ class Purchase extends CI_Controller {
         $offeringID = $this->input->post("offeringID"); // get offeringID
         $quantity = $this->input->post("quantity"); // get quantity
 
-        /********* check to valid data ************/
+        /*         * ******* check to valid data *********** */
         if (empty($customerName)) {
             $this->send(HTTP_UNSUCCESS, 'Please enter customer name');
         }
@@ -101,7 +161,7 @@ class Purchase extends CI_Controller {
         if (!is_numeric($quantity)) {
             $this->send(HTTP_UNSUCCESS, 'Please enter numeric quantity');
         }
-        /************* End validation****************/
+        /*         * *********** End validation*************** */
 
         $table = 'Purchase';
         $data = [
