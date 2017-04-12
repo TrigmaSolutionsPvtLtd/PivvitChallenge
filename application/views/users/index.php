@@ -1,2 +1,2 @@
-<?php echo "this is nice. How are you.this is fine....";?>
+<?php echo "this is nice.";?>
 
