@@ -6,6 +6,7 @@ class Purchase_model extends CI_Model {
     public function get_purchase() {
         $this->db->select('*');
         $this->db->from('Purchase');
+        $this->db->join('Offering', 'Offering.id = Purchase.offeringID', 'left');
         $query = $this->db->get();
         return $query->result_array();
     }
