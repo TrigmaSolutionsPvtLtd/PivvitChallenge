@@ -6,7 +6,7 @@ class User extends CI_Controller {
 
     public function index() {
         $this->load->view('users/index');
-        echo "this is me...";
+        echo "yes";
     }
 
 }
