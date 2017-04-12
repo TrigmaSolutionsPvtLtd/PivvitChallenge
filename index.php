@@ -1,7 +1,4 @@
 <?php
-echo "test";
-echo "hi"; 
-that th e nice .....
 /**
  * CodeIgniter
  *
