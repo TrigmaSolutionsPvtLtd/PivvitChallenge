@@ -34,7 +34,7 @@ class Purchase extends CI_Controller {
             $this->load->view('purchase', $data);
         } else {
             $data = array(
-                'token' => SECURITY_TOKEN,
+                'security_token' => SECURITY_TOKEN,
                 'offeringID' => (int) $this->input->post('offering'),
                 'customerName' => $this->input->post('customer_name'),
                 'quantity' => $this->input->post('quantity'),
@@ -46,29 +46,25 @@ class Purchase extends CI_Controller {
 
     public function get() {
         $data = array(
-            'token' => SECURITY_TOKEN,
+            'security_token' => SECURITY_TOKEN,
         );
-        $url = 'http://localhost/PivvitChallenge/Purchase/purchases';
-        echo $this->build_request($data, 'POST', $url);
-        $this->load->view('list');
+        $url = base_url().'Purchase/purchases';
+        $data = $this->build_request($data, 'POST', $url);
+		$lists = json_decode($data);
+        $this->load->view('list',array('lists'=>$lists));
     }
 
     private function build_request($data, $method, $request) {
-        $data_string = json_encode($data);
-        $curl = curl_init($request);
-        curl_setopt($curl, CURLOPT_CUSTOMREQUEST, $method);
-        curl_setopt($curl, CURLOPT_HTTPHEADER, array(
-            'Content-Type: application/json',
-            'Content-Length: ' . strlen($data_string))
-        );
-        curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);  // Make it so the data coming back is put into a string
-        curl_setopt($curl, CURLOPT_POSTFIELDS, $data_string);  // Insert the data
-        // Send the request
-        $result = curl_exec($curl);
+		$ch = curl_init($request);
+		curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+		curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
 
-        // Free up the resources $curl is using
-        curl_close($curl);
-        return $result;
+		// execute!
+		$response = curl_exec($ch);
+
+		// close the connection, release resources used
+		curl_close($ch);
+        return $response;
     }
 
     /*
@@ -129,9 +125,12 @@ class Purchase extends CI_Controller {
 
         foreach ($purchaseData as $purchase) {
             $josn[] = [
+                'id' => $purchase['id'],
                 'customerName' => $purchase['customerName'],
                 'offeringID' => $purchase['offeringID'],
-                'offeringID' => $purchase['quantity'],
+                'title' => $purchase['title'],
+                'price' => $purchase['price'],
+                'quantity' => $purchase['quantity'],
             ];
         }
         $this->send(HTTP_SUCCESS, $josn);
